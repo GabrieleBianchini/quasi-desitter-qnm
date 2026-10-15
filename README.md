@@ -4,6 +4,9 @@
 
 This project computes the quasinormal mode (QNM) spectrum of a massless scalar field on a quasi-de Sitter metric, using a shooting method with arbitrary-precision arithmetic (`mpmath`).
 
+The calculation is part of:
+- G. Bianchini, O. Luongo, *"Quasinormal modes of massless scalar perturbations on a quasi-de Sitter spacetime"* (in preparation).
+
 The metric was introduced in:
 
 - R. Giambò, O. Luongo, *"De Sitter-like Configurations with Asymptotic Quintessence Environment"*, Class. Quantum Grav. **41**, 125005 (2024). [doi:10.1088/1361-6382/ad43a9](https://doi.org/10.1088/1361-6382/ad43a9)
