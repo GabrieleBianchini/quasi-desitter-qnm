@@ -96,33 +96,24 @@ def R_rN_prime(x):
 kappa = mp.sqrt((-Lam - 3 * k0) / 3)
 
 def c1_rC(omega):
-    num = (3 * omega * (Lam + 3 * k0) * (Lam + k0)
-           - 1j * kappa * (4 * (Lam + 3 * k0)**2 + 9 * omega**2 * (Lam + k0)
-                            + 2 * ell * (ell + 1) * Lam * (Lam + 3 * k0)))
-    den = 12 * (Lam + 3 * k0)**2 * (1j * kappa - omega)
-    return mp.sqrt(3) * mp.sqrt(Lam) / den * num
-
-def c2_rC(omega):
-    num = (4j * ell * (ell + 1) * (3 * k0 + 1) * (
-               ell * (ell + 1) * kappa * (3 * k0 + 1)
-               + kappa * (36 * k0**2 + 9 * k0 * omega**2 + 42 * k0 + 9 * omega**2 + 10)
-               + 6j * omega * (3 * k0 + 1))
-           + omega * (4212 * k0**4 - 3564j * k0**3 * kappa * omega + 1215 * k0**3 * omega**2 + 6048 * k0**3
-                      + 81j * k0**2 * kappa * omega**3 - 3564j * k0**2 * kappa * omega + 1107 * k0**2 * omega**2 + 3024 * k0**2
-                      + 162j * k0 * kappa * omega**3 - 792j * k0 * kappa * omega + 117 * k0 * omega**2 + 624 * k0
-                      + 81j * kappa * omega**3 - 39 * omega**2 + 44))
-    den = 96j * (3 * k0 + 1)**3 * (6 * k0 * kappa + 9j * k0 * omega + 3 * kappa * omega**2 + 2 * kappa + 3j * omega)
-    return num / den
+    s = -1j * omega / (2 * kappa)
+    A2 = -2 * mp.sqrt(3) * (Lam + 3 * k0) / (3 * mp.sqrt(Lam))
+    A1 = -A2
+    A0 = mp.sqrt(3) * mp.sqrt(Lam) * omega**2 / (2 * Lam)
+    B2 = -(7 * Lam + 9 * k0) / 3
+    B1 = (10 * Lam + 12 * k0) / 3
+    B0 = (-4 * Lam * ell**2 - 4 * Lam * ell - 8 * Lam - 24 * k0 + 3 * omega**2) / 12
+    return -(B2 * s * (s - 1) - B1 * s + B0) / (A2 * s * (s + 1) - A1 * (s + 1) + A0)
 
 def R_rC(u, omega):
-    s = 1j * omega / (2 * kappa)
-    c1, c2 = c1_rC(omega), c2_rC(omega)
-    return u**s * (1 + c1 * u + c2 * u**2)
+    s = -1j * omega / (2 * kappa)
+    c1 = c1_rC(omega)
+    return u**s * (1 + c1 * u)
 
 def R_rC_prime(u, omega):
-    s = 1j * omega / (2 * kappa)
-    c1, c2 = c1_rC(omega), c2_rC(omega)
-    return u**(s - 1) * (s + c1 * (s + 1) * u + c2 * (s + 2) * u**2)
+    s = -1j * omega / (2 * kappa)
+    c1 = c1_rC(omega)
+    return u**(s - 1) * (s + c1 * (s + 1) * u)
 
 
 # %% SCALE-INVARIANT WRONSKIAN AND MATCHING POINT
@@ -137,7 +128,7 @@ def make_DeltaL(eps, epsp, r_match, N):
 
         u0 = epsp
         r0c = rc - u0
-        y0c = (R_rC(u0, omega), R_rC_prime(u0, omega))
+        y0c = (R_rC(u0, omega), -R_rC_prime(u0, omega))
         y_out = integrate(r0c, y0c, r_match, N, omega)
         L_out = y_out[1] / y_out[0]
 
