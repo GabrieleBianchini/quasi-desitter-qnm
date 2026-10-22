@@ -217,7 +217,7 @@ def refine_mode(omega_guess, eps=mp.mpf('0.01'),
 
 # %% SCAN -- run this to locate a mode candidate
 
-omega_rif = mp.mpc(0, -1.24)  # rough reference, adjust based on what you're looking for
+omega_rif = mp.mpc(0, -1.09)  # rough reference, adjust based on what you're looking for
 r_match_scan = r_match_balanced(omega_rif, mp.mpf('0.01'), mp.mpf('0.0005'))
 DL_scan = make_DeltaL(mp.mpf('0.01'), mp.mpf('0.0005'), r_match_scan, 1200)
 
@@ -227,4 +227,4 @@ scan_grid(DL_scan, re_vals=[-0.3, -0.1, 0.0, 0.1, 0.3],
 
 # %% REFINE -- once you have a candidate from the scan above
 
-result = refine_mode(mp.mpc(0, -1.24))
+result = refine_mode(mp.mpc(0, -1.09))
