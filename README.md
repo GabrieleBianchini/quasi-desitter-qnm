@@ -51,7 +51,7 @@ so that the master equation is written as `P2(r) R'' + P1(r) R' + P0(r,omega) R 
 
 ### Boundary conditions
 
-At `r_N`, a Frobenius analysis gives two indicial roots, `s = 0` and `s = 3/2`. Neither diverges, so the choice of branch is fixed by a self-adjointness argument (Horowitz-Marolf/Wald): only `s = 3/2` gives a vanishing boundary term, so the physical condition is Dirichlet, `R -> 0`. At `r_C`, the physical condition is purely outgoing waves, with indicial exponent `s = +i*omega/(2*kappa)`, `kappa = sqrt((-Lambda-3*k0)/3)` (the surface gravity of the cosmological horizon).
+At `r_N`, a Frobenius analysis gives two indicial roots, `s = 0` and `s = 3/2`. Neither diverges, so the choice of branch is fixed by a self-adjointness argument (Horowitz-Marolf/Wald): only `s = 3/2` gives a vanishing boundary term, so the physical condition is Dirichlet, `R -> 0`. At `r_C`, the physical condition is purely outgoing waves. Near the horizon `r_* ~ -ln(u)/(2*kappa)`, with `u = r_C - r`, so `e^{i*omega*r_*} = u^{-i*omega/(2*kappa)}` and the indicial exponent is `s = -i*omega/(2*kappa)`, `kappa = sqrt((-Lambda-3*k0)/3)` (the surface gravity of the cosmological horizon).
 
 ### Local series
 
@@ -62,12 +62,12 @@ def R_rN(x):
     return x**mp.mpf('1.5') * (1 + c1N * x + c2N * x**2)
 
 def R_rC(u, omega):
-    s = 1j * omega / (2 * kappa)
-    c1, c2 = c1_rC(omega), c2_rC(omega)
-    return u**s * (1 + c1 * u + c2 * u**2)
+    s = -1j * omega / (2 * kappa)
+    c1 = c1_rC(omega)
+    return u**s * (1 + c1 * u)
 ```
 
-`c1N`, `c2N` are general in `k0` and `ell` (they turn out to be independent of `ell` up to this order); `c1_rC`, `c2_rC` are general in `k0`, `ell` and `omega`. All four were derived symbolically and validated against the full equation, with residuals scaling as `O(x^3)` / `O(u^3)` as the series truncation order predicts.
+`c1N`, `c2N` are general in `k0` and `ell` (they turn out to be independent of `ell` up to this order); `c1_rC` is given by the first Frobenius recursion and is general in `k0`, `ell` and `omega`. All three were validated against the full equation, with residuals scaling as `O(x^3)` / `O(u^2)` as the series truncation orders predict.
 
 ### Integrator
 
