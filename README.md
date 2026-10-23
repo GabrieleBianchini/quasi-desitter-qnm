@@ -62,16 +62,15 @@ def R_rN(x):
     return x**mp.mpf('1.5') * (1 + c1N * x + c2N * x**2)
 
 def R_rC(u, omega):
-    s = -1j * omega / (2 * kappa)
-    c1 = c1_rC(omega)
-    return u**s * (1 + c1 * u)
+    s, a = a_rC(omega)
+    return u**s * mp.fsum(a[n] * u**n for n in range(M))
 ```
 
-`c1N`, `c2N` are general in `k0` and `ell` (they turn out to be independent of `ell` up to this order); `c1_rC` is given by the first Frobenius recursion and is general in `k0`, `ell` and `omega`. All three were validated against the full equation, with residuals scaling as `O(x^3)` / `O(u^2)` as the series truncation orders predict.
+`c1N`, `c2N` are general in `k0` and `ell` (they turn out to be independent of `ell` up to this order). At `r_C` the coefficients `a_n` are obtained from the Frobenius recursion, after expanding the coefficients of the equation in powers of `u = r_C - r`, and the series is truncated at `M = 60`. The series converges for `u < r_C - r_N`. The residual near `r_N` scales as `O(x^3)`, as the truncation order predicts, and near `r_C` the results do not change between `M = 40` and `M = 80`.
 
 ### Integrator
 
-A standard 4th-order Runge-Kutta integrator, run in `mpmath`'s arbitrary-precision arithmetic (not machine floats), carries each series solution from near its boundary to a common matching point:
+A standard 4th-order Runge-Kutta integrator, run in `mpmath`'s arbitrary-precision arithmetic (not machine floats), carries each series solution from near its boundary to a common matching point. The leg from `r_C` starts at a finite distance `u0 = 0.1` from the horizon, where the series at order `M` is accurate to many more digits than needed. Starting much closer to the horizon with a low-order series would let the truncation error, which acts as a small ingoing wave, grow by a factor of order `(u_match/u0)^(|Im(omega)|/kappa)` before reaching the matching point.
 
 ```python
 def rk4_step(r, y, sigma, omega):
@@ -81,14 +80,14 @@ def rk4_step(r, y, sigma, omega):
     ...
 ```
 
-Arbitrary precision matters here: as the mode number `n` grows, the two independent solutions separate exponentially fast, and the sub-dominant branch is lost to floating-point rounding long before it would be lost analytically. Increasing `mp.mp.dps` (decimal digits of precision) and the number of integration steps `N` postpones this, at a real computational cost.
+With the series at order `M` and a finite `u0`, the default precision (`mp.mp.dps = 15`) and `N = 1000` steps per leg are enough to reproduce all the modes of the paper to six decimal places.
 
 ### Matching and root-finding
 
 The two integrated solutions are compared at the matching point through their logarithmic derivative, `L_in - L_out`, rather than the raw Wronskian:
 
 ```python
-def make_DeltaL(eps, epsp, r_match, N):
+def make_DeltaL(eps, u0, r_match, N):
     def DeltaL(omega):
         ...
         return L_in - L_out
@@ -97,7 +96,7 @@ def make_DeltaL(eps, epsp, r_match, N):
 
 This is because the raw Wronskian's magnitude depends on the series normalization and decreases monotonically with `Im(omega)` regardless of the underlying physics, making it useless as a root-finding target. The logarithmic derivative is scale-invariant and only vanishes at genuine QNM frequencies.
 
-The matching point itself is chosen to balance the two integration legs (`r_match_balanced`), based on the classical WKB turning-point criterion, so that neither leg has to cross an exponentially larger stretch of the domain than the other.
+The matching point is the midpoint `(r_N + r_C)/2`. The roots do not depend on this choice, which is checked during refinement.
 
 ### Search and refinement
 
@@ -110,16 +109,7 @@ def scan_grid(DL, re_vals, im_vals):
         print(...)
 ```
 
-`refine_mode` takes a rough candidate and pushes the boundary-layer parameter `epsilon'` (how close to `r_C` the local series is evaluated) toward zero in a fixed sequence, re-solving for the root at each step. Since this sequence converges geometrically but not exactly linearly, Re and Im are each extrapolated separately with Aitken's Delta-squared process, which infers the limit from the measured convergence ratio instead of assuming one:
-
-```python
-def _aitken(x1, x2, x3):
-    d1, d2 = x2 - x1, x3 - x2
-    d2a = d2 - d1
-    return x1 - d1**2 / d2a
-```
-
-The spread between two independent Aitken estimates (using different but overlapping triples of points) is reported as the uncertainty on the final value.
+`refine_mode` takes a rough candidate, converges it, and then repeats the calculation changing one numerical parameter at a time: `eps`, `u0`, the number of steps `N`, the matching point and the truncation order `M`. The largest change of Re and Im with respect to the reference value is reported as the uncertainty. A full refinement takes a few minutes.
 
 ---
 
@@ -135,5 +125,14 @@ Edit the `CONFIGURATION` cell at the top of `qnm_shooting.py` to set `k0` and `e
 
 ## Known limitations
 
-- Higher overtones (`n >= 2`) are numerically harder to converge with direct shooting; this is a known limitation of the method (as opposed to e.g. Leaver's continued-fraction approach), not specific to this metric.
-- The matching-point and precision settings that work well for one mode are not guaranteed to work for another; some manual tuning of `epsp`, `N` and `mp.mp.dps` is generally needed when searching for new modes.
+- The series at `r_C` converges for `u < r_C - r_N`, so `u0` and the matching point must stay inside this radius.
+- The Frobenius normalization `a_0 = 1` is singular at `omega = -i*n*kappa`, where the recursion denominator vanishes. Root-finding should not start exactly at these points.
+- Modes have been computed up to `|Im(omega)| = 6`. Much more damped modes would need a higher `M` or a different method, such as Leaver's continued fraction.
+
+---
+
+## Changelog
+
+- **v1.2** (October 2026). Series at `r_C` truncated at `M = 60` through the Frobenius recursion, integration started at finite `u0 = 0.1`, matching at the midpoint. The Aitken extrapolation is replaced by a direct check on the numerical parameters.
+- **v1.1** (October 2026). Corrected outgoing boundary condition at `r_C`: `s = -i*omega/(2*kappa)`.
+- **v1.0** (August 2026). First release.
