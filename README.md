@@ -51,7 +51,7 @@ so that the master equation is written as `P2(r) R'' + P1(r) R' + P0(r,omega) R 
 
 ### Boundary conditions
 
-At `r_N`, a Frobenius analysis gives two indicial roots, `s = 0` and `s = 3/2`. Neither diverges, so the choice of branch is fixed by a self-adjointness argument (Horowitz-Marolf/Wald): only `s = 3/2` gives a vanishing boundary term, so the physical condition is Dirichlet, `R -> 0`. At `r_C`, the physical condition is purely outgoing waves. Near the horizon `r_* ~ -ln(u)/(2*kappa)`, with `u = r_C - r`, so `e^{i*omega*r_*} = u^{-i*omega/(2*kappa)}` and the indicial exponent is `s = -i*omega/(2*kappa)`, `kappa = sqrt((-Lambda-3*k0)/3)` (the surface gravity of the cosmological horizon).
+At `r_N`, a Frobenius analysis gives two indicial roots, `s = 0` and `s = 3/2`. Neither diverges, and symmetry of the wave operator alone does not select a branch. The condition is fixed by the Friedrichs extension of the operator (Wald 1980), whose domain contains only functions vanishing at `r_N`: this selects `s = 3/2`, i.e. the Dirichlet condition `R -> 0`. With this condition the flux through `r_N` vanishes, so the singularity acts as a reflecting boundary. At `r_C`, the physical condition is purely outgoing waves. Near the horizon `r_* ~ -ln(u)/(2*kappa)`, with `u = r_C - r`, so `e^{i*omega*r_*} = u^{-i*omega/(2*kappa)}` and the indicial exponent is `s = -i*omega/(2*kappa)`, `kappa = sqrt((-Lambda-3*k0)/3)` (the surface gravity of the cosmological horizon).
 
 ### Local series
 
@@ -94,7 +94,7 @@ def make_DeltaL(eps, u0, r_match, N):
     return DeltaL
 ```
 
-This is because the raw Wronskian's magnitude depends on the series normalization and decreases monotonically with `Im(omega)` regardless of the underlying physics, making it useless as a root-finding target. The logarithmic derivative is scale-invariant and only vanishes at genuine QNM frequencies.
+This is because the raw Wronskian's magnitude depends on the series normalization and decreases monotonically with `Im(omega)` regardless of the underlying physics, making it useless as a root-finding target. The logarithmic derivative is scale-invariant. Since `W = -R_in * R_out * DeltaL` at the matching point, the two criteria are equivalent as long as `r_match` does not fall exactly on a node of the mode, which does not happen for a generic choice.
 
 The matching point is the midpoint `(r_N + r_C)/2`. The roots do not depend on this choice, which is checked during refinement.
 
@@ -109,6 +109,8 @@ def scan_grid(DL, re_vals, im_vals):
         print(...)
 ```
 
+For the paper, the search was made systematic: `|DeltaL|` is first computed on a coarse grid over `Re(omega) in [0,20]`, `Im(omega) in [-6.1,1]`, and each local minimum is refined. On the imaginary axis `DeltaL` is real, so its zeros are located as sign changes. Near `omega = -i*n*kappa`, where `DeltaL` has poles and modes can sit very close to them, the scan is repeated with a much finer step.
+
 `refine_mode` takes a rough candidate, converges it, and then repeats the calculation changing one numerical parameter at a time: `eps`, `u0`, the number of steps `N`, the matching point and the truncation order `M`. The largest change of Re and Im with respect to the reference value is reported as the uncertainty. A full refinement takes a few minutes.
 
 ---
@@ -119,7 +121,7 @@ def scan_grid(DL, re_vals, im_vals):
 pip install -r requirements.txt
 ```
 
-Edit the `CONFIGURATION` cell at the top of `qnm_shooting.py` to set `k0` and `ell`, then run the `SCAN` cell to locate a candidate and the `REFINE` cell to converge it with an uncertainty estimate. The file is organized in `# %%` cells (Spyder / VS Code style) so each step can be re-run independently without recomputing the setup.
+Edit the `CONFIGURATION` cell at the top of `qnm_shooting.py` to set `k0` and `ell` (the paper uses `ell = 0, 1, 2, 3`), then run the `SCAN` cell to locate a candidate and the `REFINE` cell to converge it with an uncertainty estimate. The file is organized in `# %%` cells (Spyder / VS Code style) so each step can be re-run independently without recomputing the setup.
 
 ---
 
@@ -127,12 +129,14 @@ Edit the `CONFIGURATION` cell at the top of `qnm_shooting.py` to set `k0` and `e
 
 - The series at `r_C` converges for `u < r_C - r_N`, so `u0` and the matching point must stay inside this radius.
 - The Frobenius normalization `a_0 = 1` is singular at `omega = -i*n*kappa`, where the recursion denominator vanishes. Root-finding should not start exactly at these points.
-- Modes have been computed up to `|Im(omega)| = 6`. Much more damped modes would need a higher `M` or a different method, such as Leaver's continued fraction.
+- Modes have been computed up to `|Im(omega)| = 6.1`. Much more damped modes would need a higher `M` or a different method, such as Leaver's continued fraction.
+- `mp.mp.dps = 15` is set inside the script, so changing the precision from outside has no effect.
 
 ---
 
 ## Changelog
 
+- **v2.0** (November 2026). Boundary condition at `r_N` justified through the Friedrichs extension; spectrum extended to `ell = 0, 1`; systematic search of the complex plane documented. Numerical results for `ell = 2, 3` unchanged.
 - **v1.2** (October 2026). Series at `r_C` truncated at `M = 60` through the Frobenius recursion, integration started at finite `u0 = 0.1`, matching at the midpoint. The Aitken extrapolation is replaced by a direct check on the numerical parameters.
 - **v1.1** (October 2026). Corrected outgoing boundary condition at `r_C`: `s = -i*omega/(2*kappa)`.
 - **v1.0** (August 2026). First release.
